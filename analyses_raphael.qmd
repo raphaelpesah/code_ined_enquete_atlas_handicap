@@ -1,0 +1,656 @@
+---
+title: "Disability atlas in Sub-Saharan Africa"
+format:
+  html: 
+    grid:
+      sidebar-width: 250px
+      body-width: 1050px
+      margin-width: 300px
+date: today
+lightbox: true
+toc: true
+code-fold: true
+execute: 
+  warning: false
+  message: false
+editor: visual
+---
+
+# Loading data
+
+```{r}
+#| include = TRUE 
+# We include code chunks but there are folded
+
+library(srvyr)
+library(tidyverse)
+library(gtsummary)
+theme_gtsummary_language(language = "fr", decimal.mark = ",", big.mark = " ")
+options(survey.lonely.psu = "adjust") # Added for the case where there may be a single PSU in a strata, as indicated here https://www.youtube.com/watch?v=pJwd2-m3QBY ; if we don't add this we get an error when we make the tbl_svysummary for saoto19wt
+#Sys.setlocale("LC_ALL", "en_US.UTF-8")
+#options(encoding = "UTF-8") 
+# Two lines above to make sure the symbol ° (for long and lat) displays correctly in the maps, but doesn't make it
+# In case it doesn't work https://stackoverflow.com/questions/75758155/the-longitude-and-latitude-coordinates-on-an-sf-ggplot-map-are-displaying-with-b
+load("../data/data_atlas.RData") # this is built in 00_built.R and contains the datasets saved at the end of 02_recoding_dhs and at the end of 03_recoding_mics
+list2env(dhs_recoded, envir = .GlobalEnv) # To unwrap the "list" dhs_recoded
+list2env(mics_recoded, envir = .GlobalEnv) # Idem
+library(rnaturalearth) # For the basemap of the african continent
+```
+
+
+# National prevalences of disability (at the smallest possible level)
+
+## Tables for DHS countries
+
+```{r}
+make_prev_tb <- function(country99wt, smallest_admin) {
+  country99wt |>
+    tbl_svysummary(
+      by = c({{smallest_admin}}), # bracket technique for quotes found here https://stackoverflow.com/questions/58926917/how-to-refer-to-the-function-arguments-in-quotes
+      include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+      type = list(
+        #at_least_alotof_diff_any_domain ~ "categorical" # This displays the frequency for both "yes"/"no", rather than for just "no"
+      ),
+      statistic = ~"{p}% ({n_unweighted})",
+      digits = ~ c(1, 0),
+      label = list(
+        variable = "Prevalence of variable"
+      )
+    ) |>
+    modify_header(label ~ "**Variable**") |>
+    modify_spanning_header(everything() ~ "**Prevalence (weighted)**")
+}
+
+# Note that the admin2 variables are the ones before the recoding when we merge the prevalence table to a basemap
+
+make_prev_tb(kenya22wt, admin2) # TODO Change below the tables for MICS countries # Note 27/11: I can do it easily with "kenya22_prev_admin2 <- kenya22_prev_admin2 |> mutate(admin2 = NAME_2/strata/district/NAME_2)" at the end of the prevalence section for each country, but I'll wait until I'm a little more advanced to see if it's more useful or confusing
+make_prev_tb(malawi16wt, admin2)
+make_prev_tb(mali18wt, admin2)
+make_prev_tb(maurit19wt, admin2)
+make_prev_tb(mozam22wt, admin2)
+make_prev_tb(nigeria18wt, admin3)
+make_prev_tb(rwanda19wt, admin2)
+make_prev_tb(senegal18wt, admin2)
+make_prev_tb(senegal19wt, admin2)
+make_prev_tb(safrica16wt, admin2)
+make_prev_tb(tanza22wt, admin2)
+make_prev_tb(uganda16wt, admin2)
+```
+
+## Tables for MICS countries
+
+```{r}
+
+make_prev_tb(benin21wt, admin1)
+make_prev_tb(centraf18wt, admin1)
+make_prev_tb(chad19wt, admin1)
+make_prev_tb(comor22wt, admin2)
+make_prev_tb(drcong17wt, admin1)
+make_prev_tb(eswat21wt, admin2)
+make_prev_tb(gamb18wt, admin2)
+make_prev_tb(ghana17wt, admin1)
+make_prev_tb(guibi18wt, admin1)
+make_prev_tb(lesot18wt, admin2)
+make_prev_tb(madag18wt, admin2)
+make_prev_tb(malawi19wt, admin3)
+make_prev_tb(saoto19wt, admin2)
+make_prev_tb(sierral17wt, admin3)
+make_prev_tb(togo17wt, admin1)
+#make_prev_tb(yemen22wt, admin1)
+make_prev_tb(zimbab19wt, admin2)
+
+```
+
+
+# Maps of sub-national disability prevalence for vision disability, for each country
+
+## DHS countries
+
+### Kenya
+
+#### Kenya, population aged 18-49 years old, by Counties
+```{r}
+ggplot(kenya22_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Kenya, population aged 18-49 years old, by Sub-counties
+```{r}
+ggplot(kenya22_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Malawi DHS
+In this survey the disability questions are asked only to children 10-17 years old and not to adults.
+
+#### Malawi DHS, population aged 10-17 years old, by Regions
+```{r}
+ggplot(malawi16_prev_admin1) + geom_sf(aes(fill = see_prev)) 
+```
+
+#### Malawi DHS, population aged 10-17 years old, by Districts
+```{r}
+ggplot(malawi16_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Mali
+
+#### Mali, population aged 18-49 years old, by Regions
+```{r}
+ggplot(mali18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Mali, population aged 18-49 years old, by Cercles
+```{r}
+ggplot(mali18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Mauritania
+
+#### Mauritania, population aged 18-49 years old, by Regions (Wilayat)
+```{r}
+ggplot(maurit19_prev_admin1) + geom_sf(aes(fill = see_prev)) + labs(caption = "The regions Tiris Zemmour and Inchiri of Mauritania were grouped into \n1 region in the MICS survey (which means that \nthey have the same prevalence value)")
+```
+
+#### Mauritania, population aged 18-49 years old, by Departments (Moughataas)
+```{r}
+ggplot(maurit19_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Mozambique
+
+#### Mozambique, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(mozam22_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Mozambique, population aged 18-49 years old, by Districts
+```{r}
+ggplot(mozam22_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Nigeria
+
+#### Nigeria, population aged 18-49 years old, by Geopolitical zones
+```{r}
+ggplot(nigeria18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Nigeria, population aged 18-49 years old, by States
+```{r}
+ggplot(nigeria18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+#### Nigeria, population aged 18-49 years old, by Local government areas
+```{r}
+ggplot(nigeria18_prev_admin3) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Rwanda
+
+#### Rwanda, population aged 18-49 years old, by Provinces (Intara)
+```{r}
+ggplot(rwanda19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Rwanda, population aged 18-49 years old, by Districts (Uturere)
+```{r}
+ggplot(rwanda19_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Senegal 2018
+
+#### Senegal 2018, population aged 18-49 years old, by Regions
+```{r}
+ggplot(senegal18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Senegal 2018, population aged 18-49 years old, by Departments
+```{r}
+ggplot(senegal18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Senegal 2019
+
+#### Senegal 2019, population aged 18-49 years old, by Regions
+```{r}
+ggplot(senegal19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Senegal 2019, population aged 18-49 years old, by Departments
+```{r}
+ggplot(senegal19_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### South Africa
+
+#### South Africa, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(safrica16_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### South Africa, population aged 18-49 years old, by Districts
+```{r}
+ggplot(safrica16_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Tanzania
+
+#### Tanzania, population aged 18-49 years old, by Regions (Mikoa)
+```{r}
+ggplot(tanza22_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Tanzania, population aged 18-49 years old, by Districts (Wilaya)
+```{r}
+ggplot(tanza22_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Uganda
+
+#### Uganda, population aged 18-49 years old, by Sub-regions
+```{r}
+ggplot(uganda16_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Uganda, population aged 18-49 years old, by Districts
+```{r}
+ggplot(uganda16_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+## MICS countries
+
+### Benin
+
+#### Benin, population aged 18-49 years old, by Departments
+```{r}
+ggplot(benin21_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Central African Republic
+
+#### Central African Republic, population aged 18-49 years old, by Prefectures
+```{r}
+ggplot(centraf18_prev_admin1) + geom_sf(aes(fill = see_prev)) + labs(caption = "The 17 prefectures of Central African Republic were grouped into \n7 regions in the MICS survey (which means that prefectures \ngrouped in the same region have the same prevalence value)")
+```
+
+
+### Chad
+
+#### Chad, population aged 18-49 years old, by Regions
+```{r}
+ggplot(chad19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Comores
+
+#### Comores, population aged 18-49 years old, by Islands
+```{r}
+ggplot(comor22_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Comores, population aged 18-49 years old, by Prefectures
+```{r}
+ggplot(comor22_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Democratic Republic of the Congo
+
+#### Democratic Republic of the Congo, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(drcong17_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Eswatini
+
+#### Eswatini, population aged 18-49 years old, by Regions
+```{r}
+ggplot(eswat21_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Eswatini, population aged 18-49 years old, by constituencies (Tinkhundla)
+```{r}
+ggplot(eswat21_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Gambia
+
+#### Gambia, population aged 18-49 years old, by Local government areas
+```{r}
+ggplot(gamb18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Gambia, population aged 18-49 years old, by Districts
+```{r}
+ggplot(gamb18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Ghana
+
+#### Ghana, population aged 18-49 years old, by Regions
+```{r}
+ggplot(ghana17_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Guinea-Bissau
+
+#### Guinea-Bissau, population aged 18-49 years old, by Regions
+```{r}
+ggplot(guibi18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Lesotho
+
+#### Lesotho, population aged 18-49 years old, by Ecological regions
+```{r}
+ggplot(lesot18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Lesotho, population aged 18-49 years old, by Districts
+```{r}
+ggplot(lesot18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Madagascar
+
+#### Madagascar, population aged 18-49 years old, by Regions
+```{r}
+ggplot(madag18_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Madagascar, population aged 18-49 years old, by Districts
+```{r}
+ggplot(madag18_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Malawi MICS
+
+#### Malawi MICS, population aged 18-49 years old, by Regions
+```{r}
+ggplot(malawi19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Malawi MICS, population aged 18-49 years old, by Districts
+```{r}
+ggplot(malawi19_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+#### Malawi MICS, population aged 18-49 years old, by Traditional authorities
+```{r}
+ggplot(malawi19_prev_admin3) + geom_sf(aes(fill = see_prev))
+```
+
+
+### São Tomé and Príncipe
+
+#### São Tomé and Príncipe, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(saoto19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### São Tomé and Príncipe, population aged 18-49 years old, by Districts
+```{r}
+ggplot(saoto19_prev_admin2) + geom_sf(aes(fill = see_prev)) + labs(caption = "The 7 districts of São Tomé and Príncipe were grouped into \n5 regions in the MICS survey (which means that districts \ngrouped in the same region have the same prevalence value)")
+```
+
+
+### Sierra Leone
+
+#### Sierra Leone, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(sierral17_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Sierra Leone, population aged 18-49 years old, by Districts
+```{r}
+ggplot(sierral17_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+#### Sierra Leone, population aged 18-49 years old, by Chiefdoms
+```{r}
+ggplot(sierral17_prev_admin3) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Togo
+
+#### Togo, population aged 18-49 years old, by Regions
+```{r}
+ggplot(togo17_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+
+### Zimbabwe
+
+#### Zimbabwe, population aged 18-49 years old, by Provinces
+```{r}
+ggplot(zimbab19_prev_admin1) + geom_sf(aes(fill = see_prev))
+```
+
+#### Zimbabwe, population aged 18-49 years old, by Districts
+```{r}
+ggplot(zimbab19_prev_admin2) + geom_sf(aes(fill = see_prev))
+```
+
+
+# Map of national disability prevalence for vision disability, for all available SSA countries
+
+Note that for all maps showing the full African continent, the values shown for Senegal are from the 2019 DHS survey.
+
+## National level for both DHS and MICS countries
+
+```{r}
+africa_map <- ne_countries(scale = "medium", returnclass = "sf", continent = "africa") # Example from: https://r-spatial.org/r/2018/10/25/ggplot2-sf.html, also here https://stackoverflow.com/questions/75177359/plotting-geographic-data-with-geom-sf
+
+country_level_prevalences_dhs <- bind_rows(
+  "Kenya" = kenya22_prev_admin0,
+  "Malawi" = malawi16_prev_admin0,
+  "Mali" = mali18_prev_admin0,
+  "Mauritania" = maurit19_prev_admin0,
+  "Mozambique" = mozam22_prev_admin0,
+  "Nigeria" = nigeria18_prev_admin0,
+  "Rwanda" = rwanda19_prev_admin0,
+  "Senegal" = senegal19_prev_admin0,
+  "South Africa" = safrica16_prev_admin0,
+  "Tanzania" = tanza22_prev_admin0,
+  "Uganda" = uganda16_prev_admin0,
+  .id = "country_name"
+  ) |> 
+  mutate(origin_survey = "dhs") # We add a variable with the origin survey of the data
+
+country_level_prevalences_mics <- bind_rows(
+  "Benin" = benin21_prev_admin0,
+  "Central African Rep." = centraf18_prev_admin0,
+  "Chad" = chad19_prev_admin0,
+  "Comoros" = comor22_prev_admin0,
+  "Dem. Rep. Congo" = drcong17_prev_admin0,
+  "eSwatini" = eswat21_prev_admin0,
+  "Gambia" = gamb18_prev_admin0,
+  "Ghana" = ghana17_prev_admin0,
+  "Guinea-Bissau" = guibi18_prev_admin0,
+  "Lesotho" = lesot18_prev_admin0,
+  "Madagascar" = madag18_prev_admin0,
+  "Malawi" = malawi19_prev_admin0,
+  "São Tomé and Principe" = saoto19_prev_admin0,
+  "Sierra Leone" = sierral17_prev_admin0,
+  "Togo" = togo17_prev_admin0,
+  "Zimbabwe" = zimbab19_prev_admin0,
+  .id = "country_name"
+  ) |> 
+  mutate(origin_survey = "mics") # We add a variable with the origin survey of the data
+
+country_level_prevalences <- country_level_prevalences_dhs |> 
+  filter(country_name != "Malawi") |> # We keep malawi19 from MICS and not malawi16 from DHS
+  bind_rows(country_level_prevalences_mics)
+
+# To check that no countries from country_level_prevalences is excluded : anti_join(country_level_prevalences, africa_map, by = join_by(country_name == name))
+africa_map <- left_join(africa_map, country_level_prevalences, by = join_by(name == country_name)) # We made sure above that in the table "country_level_prevalences", the name of the left was written similarly as the variable "name" in "africa_map"
+
+ggplot(data = africa_map) +
+  geom_sf(aes(fill = see_prev))
+```
+## National level for only DHS countries
+
+```{r}
+ggplot(data = africa_map |> mutate(see_prev = if_else(origin_survey == "dhs", see_prev, NA))) + # This removes the values in the see_prev variable for countries not from DHS
+  geom_sf(aes(fill = see_prev))
+```
+
+## National level for only MICS countries
+
+```{r}
+ggplot(data = africa_map |> mutate(see_prev = if_else(origin_survey == "mics", see_prev, NA))) + # This removes the values in the see_prev variable for countries not from MICS
+  geom_sf(aes(fill = see_prev))
+```
+
+
+# Map of sub-national disability prevalence for vision disability, for all available SSA countries
+
+## Admin 1 level for both DHS and MICS countries
+
+```{r}
+
+admin1_level_prevalences_dhs <- bind_rows( # The homogeneization of the name of the admin 1 variable is not necessary, but the homogeneization of the geom variable is necessary for the map to be displayed correctly
+  "Kenya" = kenya22_prev_admin1,
+  "Malawi" = malawi16_prev_admin1,
+  "Mali" = mali18_prev_admin1,
+  "Mauritania" = maurit19_prev_admin1,
+  "Mozambique" = mozam22_prev_admin1,
+  "Nigeria" = nigeria18_prev_admin1,
+  "Rwanda" = rwanda19_prev_admin1,
+  "Senegal" = senegal19_prev_admin1,
+  "South Africa" = safrica16_prev_admin1,
+  "Tanzania" = tanza22_prev_admin1,
+  "Uganda" = uganda16_prev_admin1,
+  .id = "country_name"
+) |> 
+  mutate(origin_survey = "dhs") # We add a variable with the origin survey of the data
+
+admin1_level_prevalences_mics <- bind_rows(
+  "Benin" = benin21_prev_admin1,
+  "Central African Rep." = centraf18_prev_admin1,
+  "Chad" = chad19_prev_admin1,
+  "Comoros" = comor22_prev_admin1,
+  "Dem. Rep. Congo" = drcong17_prev_admin1,
+  "eSwatini" = eswat21_prev_admin1,
+  "Gambia" = gamb18_prev_admin1,
+  "Ghana" = ghana17_prev_admin1,
+  "Guinea-Bissau" = guibi18_prev_admin1,
+  "Lesotho" = lesot18_prev_admin1,
+  "Madagascar" = madag18_prev_admin1,
+  "Malawi" = malawi19_prev_admin1,
+  "São Tomé and Principe" = saoto19_prev_admin1,
+  "Sierra Leone" = sierral17_prev_admin1,
+  "Togo" = togo17_prev_admin1,
+  "Zimbabwe" = zimbab19_prev_admin1,
+  .id = "country_name"
+) |> 
+  mutate(origin_survey = "mics") # We add a variable with the origin survey of the data
+
+
+admin1_level_prevalences <- admin1_level_prevalences_dhs |> 
+  filter(country_name != "Malawi") |> # We keep malawi19 from MICS and not malawi16 from DHS
+  bind_rows(admin1_level_prevalences_mics)
+
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin1_level_prevalences, aes(fill = see_prev))
+```
+## Admin 1 level for only DHS countries
+
+```{r}
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin1_level_prevalences |> filter(origin_survey == "dhs"), aes(fill = see_prev)) # This filters out countries not from DHS
+```
+
+## Admin 1 level for only MICS countries
+
+```{r}
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin1_level_prevalences |> filter(origin_survey == "mics"), aes(fill = see_prev)) # This filters out countries not from MICS
+```
+
+# Map of sub-national disability prevalence, at the smallest possible level, for vision disability, for all available SSA countries
+
+## Smallest possible level for both DHS and MICS countries
+
+```{r}
+
+admin2_level_prevalences_dhs <- bind_rows(
+  "Kenya" = kenya22_prev_admin2,
+  "Malawi" = malawi16_prev_admin2,
+  "Mali" = mali18_prev_admin2,
+  "Mauritania" = maurit19_prev_admin2,
+  "Mozambique" = mozam22_prev_admin2,
+  "Nigeria" = nigeria18_prev_admin2,
+  "Rwanda" = rwanda19_prev_admin2,
+  "Senegal" = senegal19_prev_admin2,
+  "South Africa" = safrica16_prev_admin2,
+  "Tanzania" = tanza22_prev_admin2,
+  "Uganda" = uganda16_prev_admin2,
+  .id = "country_name"
+) |> 
+  mutate(origin_survey = "dhs") # We add a variable with the origin survey of the data
+
+admin2_level_prevalences_mics <- bind_rows(
+  "Comoros" = comor22_prev_admin2,
+  "eSwatini" = eswat21_prev_admin2,
+  "Gambia" = gamb18_prev_admin2,
+  "Lesotho" = lesot18_prev_admin2,
+  "Madagascar" = madag18_prev_admin2,
+  "Malawi" = malawi19_prev_admin3,
+  "São Tomé and Principe" = saoto19_prev_admin2,
+  "Sierra Leone" = sierral17_prev_admin3,
+  "Zimbabwe" = zimbab19_prev_admin2,
+  .id = "country_name"
+) |> 
+  mutate(origin_survey = "mics") # We add a variable with the origin survey of the data
+
+admin2_level_prevalences <- admin2_level_prevalences_dhs |> 
+  filter(country_name != "Malawi") |> # We keep malawi19 from MICS and not malawi16 from DHS
+  bind_rows(admin2_level_prevalences_mics)
+
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin2_level_prevalences, aes(fill = see_prev))
+
+```
+
+## Smallest possible level for only DHS countries
+
+```{r}
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin2_level_prevalences |> filter(origin_survey == "dhs"), aes(fill = see_prev)) # This filters out countries not from DHS
+```
+
+
+## Smallest possible level for only MICS countries (only for the 9 MICS countries for which it was possible to go to a subdivision smaller than admin1)
+
+```{r}
+ggplot(data = africa_map) +
+  geom_sf() +
+  geom_sf(data = admin2_level_prevalences|> filter(origin_survey == "mics"), aes(fill = see_prev)) # This filters out countries not from MICS
+```
+

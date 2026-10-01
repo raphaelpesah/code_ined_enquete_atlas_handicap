@@ -1,0 +1,4300 @@
+---
+title: "Disability atlas in Sub-Saharan Africa"
+format:
+  html: 
+    grid:
+      sidebar-width: 250px
+      body-width: 1050px
+      margin-width: 300px
+date: today
+lightbox: true
+toc: true
+code-fold: true
+execute: 
+  warning: false
+  message: false
+editor: visual
+---
+
+## Loading data
+
+```{r}
+#| include = TRUE 
+# We include code chunks but there are folded
+
+library(srvyr)
+library(tidyverse)
+library(gtsummary)
+theme_gtsummary_mean_sd() # to put mean rather than median in gtsummary for continuous variables
+
+load("../data/data_atlas.RData") # this is built in 00_built.R and contains the datasets saved at the end of 02_recoding_dhs
+```
+
+/!\\ 26/9 : Tables are now only made with Kenya 2022 data
+Note 15/1/25: The population for DHS has been restricted to 15-49 years old, but the tables and their titles have not been updated
+
+This document is useful for the atlas, to check if we get the same results (frequencies and number of people included) as in the DHS Final Reports. But note that we repeated the exact same tables (with the exact same code) for each country (so the results are directly comparable between countries), whereas in the DHS Final Reports the tables are not always the same as below (for example, Senegal 2018 Table 2.17 only includes people who answered "A lot of difficulty" or "Cannot do at all" to the disability questions).
+
+## A) Tables Kenya 2022
+
+Below are reproduced the Disability tables from Kenya 2022 DHS Final Report.
+
+### A.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_kenya22_1_degree_by_domain <- 
+kenya22wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_kenya22_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_kenya22_2_at_least_one_domain_by_age <- 
+kenya22wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_kenya22_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_kenya22_3_at_least_one_domain_fifteen_over <-
+  kenya22wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_kenya22_3_at_least_one_domain_fifteen_over
+# For Kenya22 : 42 414 instead of 42 372 in the final report
+```
+
+### A.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_kenya22_4_women_by_marital <- 
+  kenya22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+
+tab_kenya22_5_women_by_residence <-
+  kenya22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_kenya22_6_women_by_education <-
+  kenya22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+
+tab_kenya22_7_women_by_wealth <-
+  kenya22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_kenya22_8_women_by_region <-
+  kenya22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_8_women_by_region
+```
+
+### A.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_kenya22_9_men_by_marital <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_kenya22_10_men_by_residence <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_kenya22_11_men_by_education <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_kenya22_12_men_by_wealth <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_kenya22_13_men_by_region <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_kenya22_13_men_by_region
+```
+
+## B) Tables Malawi 2016
+
+Below are reproduced the Disability tables from Malawi 2016 DHS Final Report.
+
+### B.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_malawi16_1_degree_by_domain <- 
+malawi16wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_malawi16_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_malawi16_2_at_least_one_domain_by_age <- 
+malawi16wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_malawi16_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_malawi16_3_at_least_one_domain_fifteen_over <-
+  malawi16wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_malawi16_3_at_least_one_domain_fifteen_over
+```
+
+### B.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_malawi16_4_women_by_marital <- 
+  malawi16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical
+  )
+tab_malawi16_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_malawi16_5_women_by_residence <-
+  malawi16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical
+  )
+tab_malawi16_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_malawi16_6_women_by_education <-
+  malawi16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical
+  )
+tab_malawi16_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_malawi16_7_women_by_wealth <-
+  malawi16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical
+  )
+tab_malawi16_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_malawi16_8_women_by_region <-
+  malawi16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical
+  )
+tab_malawi16_8_women_by_region
+```
+
+### B.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_malawi16_9_men_by_marital <-
+  malawi16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_malawi16_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_malawi16_10_men_by_residence <-
+  malawi16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_malawi16_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_malawi16_11_men_by_education <-
+  kenya22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_malawi16_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_malawi16_12_men_by_wealth <-
+  malawi16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_malawi16_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_malawi16_13_men_by_region <-
+  malawi16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_malawi16_13_men_by_region
+```
+
+## C) Tables Mali 2018
+
+Below are reproduced the Disability tables from Mali 2018 DHS Final Report.
+
+### C.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_mali18_1_degree_by_domain <- 
+mali18wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mali18_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_mali18_2_at_least_one_domain_by_age <- 
+mali18wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mali18_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_mali18_3_at_least_one_domain_fifteen_over <-
+  mali18wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mali18_3_at_least_one_domain_fifteen_over
+```
+
+### C.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_mali18_4_women_by_marital <- 
+  mali18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_mali18_5_women_by_residence <-
+  mali18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_mali18_6_women_by_education <-
+  mali18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_mali18_7_women_by_wealth <-
+  mali18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_mali18_8_women_by_region <-
+  mali18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_8_women_by_region
+```
+
+### C.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_mali18_9_men_by_marital <-
+  mali18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_mali18_10_men_by_residence <-
+  mali18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_mali18_11_men_by_education <-
+  mali18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_mali18_12_men_by_wealth <-
+  mali18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_mali18_13_men_by_region <-
+  mali18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mali18_13_men_by_region
+```
+
+## D) Tables Mauritania 2019
+
+Below are reproduced the Disability tables from Mauritania DHS Final Report.
+
+### D.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_maurit19_1_degree_by_domain <- 
+maurit19wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_maurit19_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_maurit19_2_at_least_one_domain_by_age <- 
+maurit19wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_maurit19_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_maurit19_3_at_least_one_domain_fifteen_over <-
+  maurit19wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_maurit19_3_at_least_one_domain_fifteen_over
+```
+
+### D.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_maurit19_4_women_by_marital <- 
+  maurit19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_maurit19_5_women_by_residence <-
+  maurit19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_maurit19_6_women_by_education <-
+  maurit19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_maurit19_7_women_by_wealth <-
+  maurit19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_maurit19_8_women_by_region <-
+  maurit19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_8_women_by_region
+```
+
+### D.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_maurit19_9_men_by_marital <-
+  maurit19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_maurit19_10_men_by_residence <-
+  maurit19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_maurit19_11_men_by_education <-
+  maurit19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_maurit19_12_men_by_wealth <-
+  maurit19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_maurit19_13_men_by_region <-
+  maurit19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_maurit19_13_men_by_region
+```
+
+## E) Tables Mozambiique 2022
+
+Below are reproduced the Disability tables from Mozambique 2022 DHS Final Report.
+
+### E.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_mozam22_1_degree_by_domain <- 
+mozam22wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mozam22_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_mozam22_2_at_least_one_domain_by_age <- 
+mozam22wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mozam22_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_mozam22_3_at_least_one_domain_fifteen_over <-
+  mozam22wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_mozam22_3_at_least_one_domain_fifteen_over
+```
+
+### E.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_mozam22_4_women_by_marital <- 
+  mozam22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_mozam22_5_women_by_residence <-
+  mozam22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_mozam22_6_women_by_education <-
+  mozam22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_mozam22_7_women_by_wealth <-
+  mozam22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_mozam22_8_women_by_region <-
+  mozam22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_8_women_by_region
+```
+
+### E.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_mozam22_9_men_by_marital <-
+  mozam22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_mozam22_10_men_by_residence <-
+  mozam22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_mozam22_11_men_by_education <-
+  mozam22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_mozam22_12_men_by_wealth <-
+  mozam22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_mozam22_13_men_by_region <-
+  mozam22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_mozam22_13_men_by_region
+```
+
+## F) Tables Nigeria 2018
+
+Below are reproduced the Disability tables from Nigeria 2018 DHS Final Report.
+
+### F.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_nigeria18_1_degree_by_domain <- 
+nigeria18wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_nigeria18_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_nigeria18_2_at_least_one_domain_by_age <- 
+nigeria18wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_nigeria18_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_nigeria18_3_at_least_one_domain_fifteen_over <-
+  nigeria18wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_nigeria18_3_at_least_one_domain_fifteen_over
+
+```
+
+### F.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_nigeria18_4_women_by_marital <- 
+  nigeria18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_nigeria18_5_women_by_residence <-
+  nigeria18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_nigeria18_6_women_by_education <-
+  nigeria18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_nigeria18_7_women_by_wealth <-
+  nigeria18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_nigeria18_8_women_by_region <-
+  nigeria18wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_8_women_by_region
+```
+
+### F.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_nigeria18_9_men_by_marital <-
+  nigeria18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_nigeria18_10_men_by_residence <-
+  nigeria18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_nigeria18_11_men_by_education <-
+  nigeria18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_nigeria18_12_men_by_wealth <-
+  nigeria18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_nigeria18_13_men_by_region <-
+  nigeria18wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_nigeria18_13_men_by_region
+```
+
+## G) Tables Pakistan 2017
+
+Below are reproduced the Disability tables from Pakistan 2017 DHS Final Report.
+
+### G.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_pakis17_1_degree_by_domain <- 
+pakis17wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_pakis17_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_pakis17_2_at_least_one_domain_by_age <- 
+pakis17wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_pakis17_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_pakis17_3_at_least_one_domain_fifteen_over <-
+  pakis17wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_pakis17_3_at_least_one_domain_fifteen_over
+
+```
+
+### G.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_pakis17_4_women_by_marital <- 
+  pakis17wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_pakis17_5_women_by_residence <-
+  pakis17wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_pakis17_6_women_by_education <-
+  pakis17wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_pakis17_7_women_by_wealth <-
+  pakis17wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_pakis17_8_women_by_region <-
+  pakis17wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_8_women_by_region
+```
+
+### G.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_pakis17_9_men_by_marital <-
+  pakis17wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_pakis17_10_men_by_residence <-
+  pakis17wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_pakis17_11_men_by_education <-
+  pakis17wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_pakis17_12_men_by_wealth <-
+  pakis17wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_pakis17_13_men_by_region <-
+  pakis17wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_pakis17_13_men_by_region
+```
+
+
+## H) Tables Rwanda 2019
+
+Below are reproduced the Disability tables from Rwanda 2019 DHS Final Report.
+
+### H.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_rwanda19_1_degree_by_domain <- 
+rwanda19wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_rwanda19_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_rwanda19_2_at_least_one_domain_by_age <- 
+rwanda19wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_rwanda19_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_rwanda19_3_at_least_one_domain_fifteen_over <-
+  rwanda19wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_rwanda19_3_at_least_one_domain_fifteen_over
+```
+
+### H.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_rwanda19_4_women_by_marital <- 
+  rwanda19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_rwanda19_5_women_by_residence <-
+  rwanda19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_rwanda19_6_women_by_education <-
+  rwanda19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_rwanda19_7_women_by_wealth <-
+  rwanda19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_rwanda19_8_women_by_region <-
+  rwanda19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_8_women_by_region
+```
+
+### H.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_rwanda19_9_men_by_marital <-
+  rwanda19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_rwanda19_10_men_by_residence <-
+  rwanda19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_rwanda19_11_men_by_education <-
+  rwanda19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_rwanda19_12_men_by_wealth <-
+  rwanda19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_rwanda19_13_men_by_region <-
+  rwanda19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_rwanda19_13_men_by_region
+```
+
+## I) Tables Senegal 2019
+
+Below are reproduced the Disability tables from Senegal 2019 DHS Final Report.
+
+### I.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_senegal19_1_degree_by_domain <- 
+senegal19wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_senegal19_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_senegal19_2_at_least_one_domain_by_age <- 
+senegal19wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_senegal19_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_senegal19_3_at_least_one_domain_fifteen_over <-
+  senegal19wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_senegal19_3_at_least_one_domain_fifteen_over
+```
+
+### I.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_senegal19_4_women_by_marital <- 
+  senegal19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_senegal19_5_women_by_residence <-
+  senegal19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_senegal19_6_women_by_education <-
+  senegal19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_senegal19_7_women_by_wealth <-
+  senegal19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_senegal19_8_women_by_region <-
+  senegal19wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_8_women_by_region
+```
+
+### I.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_senegal19_9_men_by_marital <-
+  senegal19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_senegal19_10_men_by_residence <-
+  senegal19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_senegal19_11_men_by_education <-
+  senegal19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_senegal19_12_men_by_wealth <-
+  senegal19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_senegal19_13_men_by_region <-
+  senegal19wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_senegal19_13_men_by_region
+```
+
+## J) Tables South Africa 2016
+
+Below are reproduced the Disability tables from South Africa 2016 DHS Final Report.
+
+### J.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_safrica16_1_degree_by_domain <- 
+safrica16wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_safrica16_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_safrica16_2_at_least_one_domain_by_age <- 
+safrica16wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_safrica16_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_safrica16_3_at_least_one_domain_fifteen_over <-
+  safrica16wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_safrica16_3_at_least_one_domain_fifteen_over
+```
+
+### J.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_safrica16_4_women_by_marital <- 
+  safrica16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_safrica16_5_women_by_residence <-
+  safrica16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_safrica16_6_women_by_education <-
+  safrica16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_safrica16_7_women_by_wealth <-
+  safrica16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_safrica16_8_women_by_region <-
+  safrica16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_8_women_by_region
+```
+
+### J.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_safrica16_9_men_by_marital <-
+  safrica16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_safrica16_10_men_by_residence <-
+  safrica16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_safrica16_11_men_by_education <-
+  safrica16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_safrica16_12_men_by_wealth <-
+  safrica16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_safrica16_13_men_by_region <-
+  safrica16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_safrica16_13_men_by_region
+```
+
+
+## K) Tables Tanzania 2022
+
+Below are reproduced the Disability tables from Tanzania 2022 DHS Final Report.
+
+### K.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_tanza22_1_degree_by_domain <- 
+tanza22wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_tanza22_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_tanza22_2_at_least_one_domain_by_age <- 
+tanza22wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_tanza22_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+
+tab_tanza22_3_at_least_one_domain_fifteen_over <-
+  tanza22wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_tanza22_3_at_least_one_domain_fifteen_over
+```
+
+### K.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_tanza22_4_women_by_marital <- 
+  tanza22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_tanza22_5_women_by_residence <-
+  tanza22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_tanza22_6_women_by_education <-
+  tanza22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_tanza22_7_women_by_wealth <-
+  tanza22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_tanza22_8_women_by_region <-
+  tanza22wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_8_women_by_region
+```
+
+### K.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_tanza22_9_men_by_marital <-
+  tanza22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_tanza22_10_men_by_residence <-
+  tanza22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_tanza22_11_men_by_education <-
+  tanza22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_tanza22_12_men_by_wealth <-
+  tanza22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_tanza22_13_men_by_region <-
+  tanza22wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_tanza22_13_men_by_region
+```
+
+
+## L) Tables Uganda 2016
+
+Below are reproduced the Disability tables from Uganda 16 DHS Final Report.
+
+### L.a) Tables disability by domain and by age
+
+#### (1) Degree of difficulty by domain
+
+```{r}
+tab_uganda16_1_degree_by_domain <- 
+uganda16wt |> 
+  tbl_svysummary(
+    include = c("diff_see", "diff_hear", "diff_com", "diff_remem", "diff_walk", "diff_wash", "highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_uganda16_1_degree_by_domain
+```
+
+#### (2) Difficulty in at least one domain by age
+
+```{r}
+tab_uganda16_2_at_least_one_domain_by_age <- 
+uganda16wt |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"), 
+    by = "age_groups",
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_uganda16_2_at_least_one_domain_by_age
+```
+
+#### (3) Difficulty in at least one domain, age 15 and over
+
+```{r}
+tab_uganda16_3_at_least_one_domain_fifteen_over <-
+  uganda16wt |>
+  srvyr::filter(age_groups != "5-9", age_groups != "10-14") |> 
+  srvyr::filter(age_groups == "15-19" | age_groups == "20-29" | age_groups == "30-39" | age_groups == "40-49" | age_groups == "50-59" | age_groups == "60+") |> 
+  tbl_svysummary(
+    include = c("highest_diff_any_domain"),
+    statistic = list(
+      all_categorical() ~ "{p}"
+    ),
+    digits = list(
+      all_categorical() ~ 1
+    )
+  )
+tab_uganda16_3_at_least_one_domain_fifteen_over
+
+```
+
+### L.b) Tables women disability according to background characteristics
+
+#### (4) Disability among women aged 15 and over, by marital status
+
+```{r}
+tab_uganda16_4_women_by_marital <- 
+  uganda16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_4_women_by_marital
+```
+
+#### (5) Disability among women aged 15 and over, by type of residence
+
+```{r}
+tab_uganda16_5_women_by_residence <-
+  uganda16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+                ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_5_women_by_residence
+```
+
+#### (6) Disability among women aged 15 and over, by education level
+
+```{r}
+tab_uganda16_6_women_by_education <-
+  uganda16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_6_women_by_education
+```
+
+#### (7) Disability among women aged 15 and over, by wealth quintile
+
+```{r}
+tab_uganda16_7_women_by_wealth <-
+  uganda16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_7_women_by_wealth
+```
+
+#### (8) Disability among women aged 15 and over, by region
+
+```{r}
+tab_uganda16_8_women_by_region <-
+  uganda16wt |>
+  srvyr::filter(gender == "female", age_groups != "5-9", age_groups != "10-14") |>
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_8_women_by_region
+```
+
+### L.c) Tables men disability according to background characteristics
+
+#### (9) Disability among men aged 15 and over, by marital status
+
+```{r}
+tab_uganda16_9_men_by_marital <-
+  uganda16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "marital_status",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_9_men_by_marital
+```
+
+#### (10) Disability among men aged 15 and over, by type of residence
+
+```{r}
+tab_uganda16_10_men_by_residence <-
+  uganda16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "type_place_residence",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_10_men_by_residence
+```
+
+#### (11) Disability among men aged 15 and over, by education level
+
+```{r}
+tab_uganda16_11_men_by_education <-
+  uganda16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |>  
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "education_level_ever",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #line used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_11_men_by_education
+```
+
+#### (12) Disability among men aged 15 and over, by wealth quintile
+
+```{r}
+tab_uganda16_12_men_by_wealth <-
+  uganda16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "wealth_quintile",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_12_men_by_wealth
+```
+
+#### (13) Disability among men aged 15 and over, by region
+
+```{r}
+tab_uganda16_13_men_by_region <-
+  uganda16wt |>
+  srvyr::filter(gender == "male", age_groups != "5-9", age_groups != "10-14") |> 
+  tbl_svysummary(
+    include = c("at_least_alotof_diff_any_domain", "at_least_alotof_diff_see", "at_least_alotof_diff_hear", "at_least_alotof_diff_com", "at_least_alotof_diff_remem", "at_least_alotof_diff_walk", "at_least_alotof_diff_wash"),
+    by = "region",
+    #percent = "row",
+    statistic = list(
+      all_continuous() ~ "{mean}"
+    ),
+    digits = list(
+      all_continuous() ~ 1
+    ),
+    type = list(
+      at_least_alotof_diff_any_domain ~ "continuous",
+      at_least_alotof_diff_see ~ "continuous",
+      at_least_alotof_diff_hear ~ "continuous",
+      at_least_alotof_diff_com ~ "continuous",
+      at_least_alotof_diff_remem ~ "continuous",
+      at_least_alotof_diff_walk ~ "continuous",
+      at_least_alotof_diff_wash ~ "continuous"
+    ) #lines used to prevent continuous variable to be treated as categorical, mentioned here https://stackoverflow.com/questions/67388749/r-tbl-summary-treating-continuous-variables-correctly
+  )
+tab_uganda16_13_men_by_region
+```
+
